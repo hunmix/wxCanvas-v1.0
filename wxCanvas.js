@@ -2021,6 +2021,264 @@ function drawAnimationStep (callback) {
   }, 30);
 }
 
+function hex2rgb (hexValue) {
+  // 如果是三位数的值则转化成6位
+  const has3Num = /#[\da-fA-F]{3}$/.test(hexValue);
+  if (has3Num) {
+    const stack = hexValue.split('').slice(1);
+    const len = stack.length;
+    const arr = [];
+    for (let i = 0; i < len; i++) {
+      let tempValue = stack.pop();
+      for (let i = 0; i < 2; i++) {
+        arr.unshift(tempValue);
+      }
+    }
+    let hexString = arr.join('');
+    hexValue = `#${hexString}`;
+  }
+  const hexParrten = /^#?([a-fA-F\d]{2})([a-fA-F\d]{2})([a-fA-F\d]{2})$/i;
+  const result = hexParrten.exec(hexValue);
+  console.log(result);
+  // 转化成rgb格式
+  return result ? {
+    r: parseInt(result[1], 16),
+    g: parseInt(result[2], 16),
+    b: parseInt(result[3], 16),
+    a: 1
+  } : null
+}
+// rgb格式化
+function formatRgb (rgbValue) {
+  console.log(rgbValue);
+  // const rgbPattern = /^[rR][gG][bB]\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)$/
+  const rgbPattern = /^[rR][gG][bB][aA]?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,?\s*(0|1|0\.\d{1,2}|\.\d{1,2})?\s*\)\s*$/;
+  const result = rgbPattern.exec(rgbValue);
+  const alpha = /\.\d{1,2}/;
+  console.log(result);
+  // 透明度为.5之类数字的时候前面加0
+  if (alpha.test(result[4])) {
+    result[4] = `0${result[4]}`;
+  }
+  console.log(parseFloat(result[4]));
+  return result ? {
+    r: parseInt(result[1]),
+    g: parseInt(result[2]),
+    b: parseInt(result[3]),
+    a: result[4] ? parseFloat(result[4]) : 1
+  } : null
+}
+
+// 处理颜色渐变方面的计算
+
+/** 处理颜色渐变
+ * @param {String} animationInfo 要处理的颜色
+ * @param {Number} goesbyRatio 已经经过的时间比值 goesbyTime / duration
+ * @param {String} startOptionColor 开始时的颜色
+ * @returns {String} 一个用rgba表示颜色的字符串
+ */
+function calcColorChange (animationInfo, goesbyRatio, startOptionColor) {
+  console.log(goesbyRatio);
+  const startColor = _getFormatRgb(startOptionColor);
+  const currentColor = _getFormatRgb(animationInfo);
+  console.log(currentColor);
+  const changedColorStep = {
+    cr: (currentColor.r - startColor.r) * goesbyRatio,
+    cg: (currentColor.g - startColor.g) * goesbyRatio,
+    cb: (currentColor.b - startColor.b) * goesbyRatio,
+    ca: (currentColor.a - startColor.a) * goesbyRatio
+  };
+  const currentRgb = {
+    r: startColor.r + changedColorStep.cr,
+    g: startColor.g + changedColorStep.cg,
+    b: startColor.b + changedColorStep.cb,
+    a: startColor.a + changedColorStep.ca
+  };
+  return `rgba(${currentRgb.r}, ${currentRgb.g}, ${currentRgb.b}, ${currentRgb.a})`
+}
+
+/** 格式化，把所有颜色都他喵转换成rgba形式
+ * @param {String} colorValue 颜色值
+ * @returns {String} rgba形式的颜色
+ */
+function _getFormatRgb (colorValue) {
+  const hexPattern = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
+  // const rgbPattern = /[rR][gG][bB]\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*\)/
+  const rgbPattern = /^[rR][gG][bB][aA]?\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*,?(\s*0|\s*1|\s*0\.\d{1,2}|\s*\.\d{1,2})?\s*\)\s*$/;
+  let result = null;
+  if (hexPattern.test(colorValue)) {
+    result = hex2rgb(colorValue);
+  } else if (rgbPattern.test(colorValue)) {
+    result = formatRgb(colorValue);
+  } else {
+    result = getColorValue(colorValue);
+  }
+  console.log(result);
+  return result
+}
+
+function getColorValue (colorValue) {
+  const colorName = colorValue.toLowerCase();
+  const color = colorList[colorName];
+  let result = null;
+  if (color) {
+    result = hex2rgb(color);
+  } else {
+    console.warn('输入颜色不合法');
+  }
+  return result
+}
+const colorList = {
+  'antiquewhite': '#FAEBD7',
+  'aqua': '#00FFFF',
+  'aquamarine': '#7FFFD4',
+  'azure': '#F0FFFF',
+  'beige': '#F5F5DC',
+  'bisque': '#FFE4C4',
+  'black': '#000000',
+  'blanchedalmond': '#FFEBCD',
+  'blue': '#0000FF',
+  'blueViolet': '#8A2BE2',
+  'brown': '#A52A2A',
+  'burlywood': '#DEB887',
+  'cadetblue': '#5F9EA0',
+  'chartreuse': '#7FFF00',
+  'chocolate': '#D2691E',
+  'coral': '#FF7F50',
+  'cornflowerblue': '#6495ED',
+  'cornsilk': '#FFF8DC',
+  'crimson': '#DC143C',
+  'cyan': '#00FFFF',
+  'darkblue': '#00008B',
+  'darkcyan': '#008B8B',
+  'darkgoldenrod': '#B8860B',
+  'darkgray': '#A9A9A9',
+  'darkgrey': '#A9A9A9',
+  'darkgreen': '#006400',
+  'darkkhaki': '#BDB76B',
+  'darkmagenta': '#8B008B',
+  'darkoliveGreen': '#556B2F',
+  'darkorange': '#FF8C00',
+  'darkorchid': '#9932CC',
+  'darkred': '#8B0000',
+  'darksalmon': '#E9967A',
+  'darkseagreen': '#8FBC8F',
+  'darkslateblue': '#483D8B',
+  'darkslategray': '#2F4F4F',
+  'darkslategrey': '#2F4F4F',
+  'darkturquoise': '#00CED1',
+  'darkviolet': '#9400D3',
+  'deeppink': '#FF1493',
+  'deepskyblue': '#00BFFF',
+  'dimgray': '#696969',
+  'dimgrey': '#696969',
+  'dodgerblue': '#1E90FF',
+  'fireBrick': '#B22222',
+  'floralwhite': '#FFFAF0',
+  'forestgreen': '#228B22',
+  'fuchsia': '#FF00FF',
+  'gainsboro': '#DCDCDC',
+  'ghostwhite': '#F8F8FF',
+  'gold': '#FFD700',
+  'goldenrod': '#DAA520',
+  'gray': '#808080',
+  'grey': '#808080',
+  'green': '#008000',
+  'greenyellow': '#ADFF2F',
+  'honeydew': '#F0FFF0',
+  'hotPink': '#FF69B4',
+  'indianred': '#CD5C5C',
+  'indigo': '#4B0082',
+  'ivory': '#FFFFF0',
+  'khaki': '#F0E68C',
+  'lavender': '#E6E6FA',
+  'lavenderblush': '#FFF0F5',
+  'lawngreen': '#7CFC00',
+  'lemonchiffon': '#FFFACD',
+  'lightblue': '#ADD8E6',
+  'lightcoral': '#F08080',
+  'lightcyan': '#E0FFFF',
+  'lightgoldenrodyellow': '#FAFAD2',
+  'lightgray': '#D3D3D3',
+  'lightgrey': '#D3D3D3',
+  'lightgreen': '#90EE90',
+  'lightpink': '#FFB6C1',
+  'lightsalmon': '#FFA07A',
+  'lightseagreen': '#20B2AA',
+  'lightskyblue': '#87CEFA',
+  'lightslategray': '#778899',
+  'lightslategrey': '#778899',
+  'lightsteelblue': '#B0C4DE',
+  'lightyellow': '#FFFFE0',
+  'lime': '#00FF00',
+  'limegreen': '#32CD32',
+  'linen': '#FAF0E6',
+  'magenta': '#FF00FF',
+  'maroon': '#800000',
+  'mediumaquamarine': '#66CDAA',
+  'mediumblue': '#0000CD',
+  'mediumorchid': '#BA55D3',
+  'mediumpurple': '#9370DB',
+  'mediumseagreen': '#3CB371',
+  'mediumslateblue': '#7B68EE',
+  'mediumspringgreen': '#00FA9A',
+  'mediumturquoise': '#48D1CC',
+  'mediumvioletRed': '#C71585',
+  'midnightblue': '#191970',
+  'mintcream': '#F5FFFA',
+  'mistyrose': '#FFE4E1',
+  'moccasin': '#FFE4B5',
+  'navajowhite': '#FFDEAD',
+  'navy': '#000080',
+  'oldlace': '#FDF5E6',
+  'olive': '#808000',
+  'olivedrab': '#6B8E23',
+  'orange': '#FFA500',
+  'orangered': '#FF4500',
+  'orchid': '#DA70D6',
+  'palegoldenrod': '#EEE8AA',
+  'palegreen': '#98FB98',
+  'paleturquoise': '#AFEEEE',
+  'palevioletred': '#DB7093',
+  'papayawhip': '#FFEFD5',
+  'peachpuff': '#FFDAB9',
+  'peru': '#CD853F',
+  'pink': '#FFC0CB',
+  'plum': '#DDA0DD',
+  'powderblue': '#B0E0E6',
+  'purple': '#800080',
+  'rebeccapurple': '#663399',
+  'red': '#FF0000',
+  'rosybrown': '#BC8F8F',
+  'royalblue': '#4169E1',
+  'saddlebrown': '#8B4513',
+  'salmon': '#FA8072',
+  'sandybrown': '#F4A460',
+  'seagreen': '#2E8B57',
+  'seashell': '#FFF5EE',
+  'sienna': '#A0522D',
+  'silver': '#C0C0C0',
+  'skyblue': '#87CEEB',
+  'slateblue': '#6A5ACD',
+  'slategray': '#708090',
+  'slategrey': '#708090',
+  'snow': '#FFFAFA',
+  'springgreen': '#00FF7F',
+  'steelblue': '#4682B4',
+  'tan': '#D2B48C',
+  'teal': '#008080',
+  'thistle': '#D8BFD8',
+  'tomato': '#FF6347',
+  'turquoise': '#40E0D0',
+  'violet': '#EE82EE',
+  'wheat': '#F5DEB3',
+  'white': '#FFFFFF',
+  'whitesmoke': '#F5F5F5',
+  'yellow': '#FFFF00',
+  'yellowgreen': '#9ACD32'
+
+};
+
 // 图形
 class Shape {
   constructor (type, drawData, dragable) {
@@ -2084,6 +2342,9 @@ class Shape {
     return this
   }
   start (loopTime, calcScale) {
+    // 动画时禁止拖动, 这边可以放到watch里面，后面再改- -
+    const tempDragable = this.dragable;
+    this.dragable = false;
     let _this = this;
     this.watch.running = true; // 动画开始
     this.watch.setLoop(loopTime); // 设置循环次数
@@ -2092,12 +2353,22 @@ class Shape {
     console.log(this.startOption);
     function stepAnimation () { // 递归实现动画循环
       drawAnimationStep(stepAnimation);
-      _this.watch.isRunning() && _this._updateStep();
+      if (_this.watch.isRunning()) {
+        _this._updateStep();
+      } else {
+        _this.dragable = tempDragable;
+      }
     }
     stepAnimation();
   }
   stop () {
     this.watch.stop();
+  }
+  // 没试过的-------------------------------------------------
+  clearAnimation () {
+    this.watch.stop();
+    this.animationStore = [];
+    this.completeAnimationStore = [];
   }
   // 更新动画
   _updateStep () {
@@ -2107,24 +2378,26 @@ class Shape {
     let nowAnimation = this.animationStore[0];
     let duration = nowAnimation[1];
     let animationInfo = nowAnimation[0];
-    let option = this._calcAnimationInfo(animationInfo, duration); // 处理动画数据，每一步动画移动的坐标
+    let option = this._calcAnimationInfo(animationInfo, duration); // 处理动画数据，每一步动画移动的坐标, 处理数据都在里面
     this.updateOption(option);
     // 是否结束动画
     if (goesByTime >= duration) {
       console.log('-------------------超帅的step分割线--------------------');
       let completeAnimation = this.animationStore.shift();
-      // console.log(this.animationStore)
       this.completeAnimationStore.push(completeAnimation);
+      // 惊了，忘记是干嘛的了，大概是克隆了一份Shape的值，防止引用型变量被篡改
       this.tempOption = Object.assign({}, this.Shape);
       _this.watch.setStartTime();
       if (this.animationStore.length === 0) {
         // 循环是否结束，没结束则将已完成的动画push到animationStore再画一遍
+        // 添加一个函数来判断， 过会改
         if (_this.watch.loop === true || --_this.watch.loop > 0) {
           this.updateOption(this.startOption); // 重新循环时重置初始属性
         } else if (--_this.watch.loop <= 0) {
+          // 用_this.watch.stop()， 过会改
           _this.watch.running = false;
         }
-        // 把已完成动画扔回去，一遍下一次start可以用
+        // 把已完成动画扔回去，以便下一次start可以用
         this.completeAnimationStore.forEach((animationInfo) => {
           this.animationStore.push(animationInfo);
         });
@@ -2135,49 +2408,62 @@ class Shape {
       }
     }
   }
+
+  /** 计算动画过程中变化的属性返回计算后的值
+   * @param {Object} option 更改的属性
+   * @param {Number} duration 动画持续时间
+   * @returns {Object} 计算后的属性合集，扔在一个对象里面返回
+   * @memberof Shape
+   */
   _calcAnimationInfo (option, duration) {
     let _this = this;
     let nowOption = {};
     let keys = Object.keys(option);
     keys.forEach((key) => {
-      let changedLen = _this._judgePositionMethod(option[key], duration, key);
-      if (_this.tempOption) {
-        nowOption[key] = _this.tempOption[key] + changedLen;
+      const goesbyRatio = _this.watch.getGoesbyTime() / duration;
+      const startValue = _this.tempOption ? _this.tempOption[key] : _this.startOption[key];
+      // 颜色和距离宽高变动分开算
+      if (key === 'color') {
+        console.log(option[key]);
+        const rgbColor = calcColorChange(option[key], goesbyRatio, startValue);
+        nowOption[key] = rgbColor;
+        // console.log(rgbColor)
       } else {
-        nowOption[key] = _this.startOption[key] + changedLen;
+        const changedValue = _this._judgePositionMethod(option[key], goesbyRatio, startValue);
+        nowOption[key] = changedValue;
       }
     });
     console.log(nowOption);
     return nowOption
   }
-  // 暂时只支持改变x, y的动画
   // 添加getCenterPosition方法获取原来中心点坐标在计算，一个想法，记录一哈
-  _judgePositionMethod (animationInfo, duration, key) {
+  /** 判断位置属性的改变方式计算出变更的单个属性值, 暂时只支持改变x, y的动画
+   * @param {*} animationInfo 改变的属性值
+   * @param {Number} goesbyRatio 经过的时间和动画持续时间的比值
+   * @param {*} startValue shape初始状态，即初始属性，改变的属性相对初始属性变化
+   * @returns 改变之后的单个属性值
+   * @memberof Shape
+   */
+  _judgePositionMethod (animationInfo, goesbyRatio, startValue) {
     let num = null;
     let changedLen = null;
-    let option = null;
     if (typeof animationInfo === 'number') {
-      if (this.tempOption) {
-        option = this.tempOption;
-      } else {
-        option = this.startOption;
-      }
-      changedLen = (animationInfo - option[key]) * this.watch.getGoesbyTime() / duration;
-      console.log(this.startOption[key]);
+      changedLen = (animationInfo - startValue) * goesbyRatio;
     } else if (animationInfo.indexOf('+') !== -1 || animationInfo.indexOf('-') !== -1) {
       num = this._getNumber(animationInfo);
-      console.log(this.startOption);
-      changedLen = num * this.watch.getGoesbyTime() / duration;
+      changedLen = num * goesbyRatio;
     }
-    console.log(changedLen);
-    return changedLen
+    // 本次要画的值
+    const changedValue = startValue + changedLen;
+    return changedValue
   }
-  // 获取属性数值，和图形方法重复了，待提取
+  // 获取属性数值，和图形方法重复了，待提取,卧槽用的地方好多啊= =再缓缓
   _getNumber (animationInfo) {
     let pattern = /[-+]\d*/;
     return Number(animationInfo.match(pattern)[0])
   }
 }
+
 let createShape = {
   'circle': function (drawData) {
     return new Circle(drawData)
